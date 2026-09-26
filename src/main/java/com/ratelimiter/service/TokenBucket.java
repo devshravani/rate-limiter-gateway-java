@@ -37,4 +37,14 @@ public class TokenBucket {
         tokens=Math.min(capacity, tokens + newTokens );
         lastRefillTime =currentTime;
     }
+    public synchronized int getRemainingTokens()
+    {
+        refillTokens();
+        return (int)tokens;
+    }
+    public int getCapacity()
+    {
+        return (int)capacity;
+    }
 }
+
