@@ -1,5 +1,6 @@
 package com.ratelimiter.service;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service 
@@ -16,10 +17,12 @@ public class CircuitBreakerService {
 
     // Circuit opens after 5 failures
     private int failureCount = 0;
-    private int failureThreshold = 5;
+   @Value("${circuit-breaker.failure-threshold:5}")
+   private int failureThreshold = 5;
 
     // Wait 10 seconds before trying HALF_OPEN
     private long openTime = 0;
+    @Value("${circuit-breaker.cooldown-ms:10000}")
     private long cooldownTime = 10_000;
 
     // Allows only one test request in HALF_OPEN state
