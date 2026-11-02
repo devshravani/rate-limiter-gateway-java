@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class RateLimiterService {
 
-    private Map<String, TokenBucket> clientBucket =
+    private final Map<String, TokenBucket> clientBucket =
             new ConcurrentHashMap<>();
 
     // Free user configuration
@@ -26,14 +26,22 @@ public class RateLimiterService {
     @Value("${rate-limit.paid.refill-rate:0.83}")
     private double paidRefillRate = 0.83;
 
-    // Default user configuration
+    // Default configuration for unknown users
     @Value("${rate-limit.default.capacity:5}")
     private double defaultCapacity = 5;
 
     @Value("${rate-limit.default.refill-rate:0.083}")
     private double defaultRefillRate = 0.083;
 
+    // Client IDs loaded from application.properties
+    @Value("${rate-limit.clients.free-user:free_user_1}")
+    private String freeUserClientId = "free_user_1";
 
+    @Value("${rate-limit.clients.paid-user:paid_user_1}")
+    private String paidUserClientId = "paid_user_1";
+
+
+    // Check whether a request is allowed
     public boolean allowRequest(String clientId) {
 
         TokenBucket bucket = getOrCreateBucket(clientId);
@@ -42,6 +50,7 @@ public class RateLimiterService {
     }
 
 
+    // Get the number of remaining tokens
     public int getRemainingTokens(String clientId) {
 
         TokenBucket bucket = getOrCreateBucket(clientId);
@@ -50,6 +59,7 @@ public class RateLimiterService {
     }
 
 
+    // Get the maximum token capacity
     public int getCapacity(String clientId) {
 
         TokenBucket bucket = getOrCreateBucket(clientId);
@@ -58,23 +68,15 @@ public class RateLimiterService {
     }
 
 
+    // Find or create the correct token bucket
     private TokenBucket getOrCreateBucket(String clientId) {
 
         return clientBucket.computeIfAbsent(
                 clientId,
                 id -> {
 
-                    // Paid user
-                    if ("paid_user_1".equals(id)) {
-
-                        return new TokenBucket(
-                                paidCapacity,
-                                paidRefillRate
-                        );
-                    }
-
                     // Free user
-                    if ("free_user_1".equals(id)) {
+                    if (freeUserClientId.equals(id)) {
 
                         return new TokenBucket(
                                 freeCapacity,
@@ -82,7 +84,16 @@ public class RateLimiterService {
                         );
                     }
 
-                    // Unknown user gets default limit
+                    // Paid user
+                    if (paidUserClientId.equals(id)) {
+
+                        return new TokenBucket(
+                                paidCapacity,
+                                paidRefillRate
+                        );
+                    }
+
+                    // Unknown user receives the default limit
                     return new TokenBucket(
                             defaultCapacity,
                             defaultRefillRate
